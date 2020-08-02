@@ -3,6 +3,7 @@
 ### 前言：目录结构使用[go专家编程](https://rainbowmango.gitbook.io/go)，大部分源码分析参考[Go语言设计与实现](https://draveness.me/golang/)
 
 ## 第一章 常见数据结构实现原理
+
 ### 1.1 chan
 #### 数据结构
 
@@ -51,7 +52,7 @@ func makechan(t *chantype, size int) *hchan {
 	return c
 }
 ```
-如果channel不存在缓冲区，则只会hchan分配一段内存，如果元素类型不是指正类型，
+如果channel不存在缓冲区，则只会hchan分配一段内存，如果元素类型不是指针类型，
 就会为hchan和底层数组分配一块连续的内存空间，否则单独为hchan和缓冲区分配内存
 
 #### 发送数据
@@ -441,11 +442,11 @@ type bmap struct {
 整体数据结构展示如下
 ![map](static/map-02-struct_sketch.png)
 
-负载因子loadFactor = count / B, go在负载因子大于6.5时触发rehash
+负载因子loadFactor = count / 2**B, go在负载因子大于6.5时触发rehash
 
 #### 查找
  1. 根据key值算出哈希值 
- 2. 取哈希值低位与hmap.B取模确定bucket位置 
+ 2. 取哈希值低位与2**B-1取模确定bucket位置 
  3. 取哈希值高位在tophash数组中查询 
  4. 如果tophash[i]中存储值也哈希值相等，则去找到该bucket中的key值进行比较 
  5. 当前bucket没有找到，则继续从下个overflow的bucket中查找。 
@@ -700,6 +701,41 @@ func evacuate(t *maptype, h *hmap, oldbucket uintptr) {
 }
 
 ```
+
+### 1.4 struct tag
+
+tag是StructField的组成部分，格式是``key1:"value1" key2:"value2"``
+```go
+type StructTag string 
+
+type StructField struct {
+    Name string
+    Type Type
+    Tag StructTag
+}
+```
+
+### 1.5 iota
+iota代表了const声明块的索引
+
+```go
+ValueSpec struct {
+    ...
+    Names []*Ident
+    ...
+}
+```
+
+编译期间伪代码
+```go
+for iota, spec := range ValueSpecs {
+    for i, name := range spec.Names {
+        obj := NewConst(name, iota...)
+    }
+}
+```
+
+
 #### 参考
 
 ## 第二章 常见控制结构实现原理
